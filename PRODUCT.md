@@ -10,7 +10,7 @@ Marcas usadas en este documento:
 - **[Propuesto]**: recomendación pendiente de aprobación.
 - **[Por validar]**: dato que falta y no debe suponerse.
 
-Ubicación: este archivo está en `docs/diseno/` por decisión del equipo. Impeccable lo busca en la raíz del proyecto; si se instala más adelante, habrá que moverlo o enlazarlo [Por validar].
+Ubicación: raíz del proyecto, donde Impeccable lo lee. Se movió desde `docs/diseno/` el 2026-11-08 (`docs/DECISIONS.md`, DEC-17).
 
 ## Platform
 

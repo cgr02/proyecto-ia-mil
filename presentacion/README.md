@@ -1,6 +1,6 @@
 # Presentación: Multiple Instance Learning
 
-Exposición de 11 diapositivas en HTML, CSS y JavaScript sin dependencias. Aplica la dirección visual provisional v0 de `docs/diseno/DESIGN.md` y el contenido de `docs/investigacion/MIL_Fase_2_Consolidada.md`.
+Exposición de 11 diapositivas en HTML, CSS y JavaScript sin dependencias. Aplica la dirección visual provisional v0 de `DESIGN.md` y el contenido de `docs/investigacion/MIL_Fase_2_Consolidada.md`.
 
 ## Ejecutar
 

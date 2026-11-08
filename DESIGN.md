@@ -90,7 +90,7 @@ Impeccable identifica como patrón repetido de las interfaces generadas por IA l
 9. **Fuentes tipográficas.** Verificar la licencia OFL, las cifras tabulares y la legibilidad a distancia. Alternativa: Source Sans 3.
 10. **Simulación de daltonismo** de los colores semánticos.
 11. **Elementos visuales sin decidir.** Una línea de mensaje bajo cada título, revelados por pasos en la diapositiva 10, una ilustración de la analogía de los llaveros y un esquema de la molécula de la diapositiva 2. Ninguno se incorpora sin aprobación.
-12. **Ubicación de PRODUCT.md** si más adelante se instala Impeccable.
+12. **Ubicación de PRODUCT.md** si más adelante se instala Impeccable. [Resuelto el 2026-11-08: PRODUCT.md y DESIGN.md están en la raíz; `docs/DECISIONS.md`, DEC-17.]
 
 ## Colors
 

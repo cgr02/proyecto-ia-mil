@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(recursos/originales/**)",
+      "Write(recursos/originales/**)"
+    ]
+  }
+}
