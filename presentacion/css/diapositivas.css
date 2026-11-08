@@ -1,0 +1,484 @@
+/*
+ * Composición de cada diapositiva. Área útil: 1728 × ~768 px
+ * (lienzo 1920 × 1080 menos márgenes de seguridad, título y pie).
+ * Regla de trabajo: si algo no cabe, se reorganiza la composición; no se reduce la tipografía.
+ */
+
+/* Texto SVG con los mismos niveles que el HTML. */
+.svg-n2 { font-size: var(--fs-mensaje); }
+.svg-n3 { font-size: var(--fs-etiqueta); }
+.svg-n4 { font-size: var(--fs-cita); }
+.svg-dim { font-family: var(--familia-dimension); font-size: var(--fs-dimension); letter-spacing: -0.02em; }
+svg text { fill: var(--tinta); font-family: var(--familia-texto); }
+svg text.fuerte { font-weight: 700; }
+svg text.secundario { fill: var(--tinta-secundaria); }
+
+/* ---------- 1. ¿Dónde está el problema? ---------- */
+.d1 .contenido {
+  display: grid;
+  grid-template-columns: 1fr 560px;
+  grid-template-rows: 1fr auto;
+  column-gap: var(--esp-lg);
+  row-gap: var(--esp-md);
+}
+
+.d1-dato {
+  align-self: center;
+}
+
+/* Líneas de zoom del recuadro b al panel b: la convención de las figuras de patología digital. */
+.d1-zoom {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.d1-leyenda {
+  align-self: center;
+}
+
+/* ---------- 2. ¿Qué es MIL? ---------- */
+.d2-tabla {
+  width: 100%;
+  table-layout: fixed;
+  align-self: start;
+}
+
+/* Anchos según la longitud real: la columna de supervisado cabe en una línea; MIL toma el resto. */
+.d2-tabla th:nth-child(1),
+.d2-tabla td:nth-child(1) { width: 300px; }
+
+.d2-tabla th:nth-child(2),
+.d2-tabla td:nth-child(2) { width: 690px; }
+
+.d2-tabla thead th {
+  vertical-align: bottom;
+}
+
+.d2-esquema {
+  display: block;
+  height: 120px;
+  width: auto;
+  margin-top: var(--esp-sm);
+}
+
+.d2-tabla tbody th {
+  font-weight: 400;
+  color: var(--tinta-secundaria);
+}
+
+.d2-tabla tbody td,
+.d2-tabla tbody th {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.d2-comparacion {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-md);
+}
+
+.d2-origen {
+  display: grid;
+  max-width: 1500px;
+}
+
+.d2-distincion {
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+.d2-origen-texto {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-md);
+}
+
+/* ---------- 3. Bag e Instance ---------- */
+.d3 .contenido {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: var(--esp-md);
+}
+
+.d3-cadena {
+  display: grid;
+  grid-template-columns: 380px 56px 320px 56px 320px 56px 1fr;
+  min-height: 0;
+}
+
+.d3-conector {
+  width: 56px;
+  height: 56px;
+  align-self: center;
+  margin-bottom: 84px; /* centra la flecha respecto a la figura, no al pie */
+}
+
+.d3-parches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: var(--esp-sm);
+  align-items: center;
+}
+
+.d3-parches .d3-parche {
+  display: block;
+  aspect-ratio: 1;
+  width: 100%;
+  height: auto;
+}
+
+.d3-claves {
+  margin: 0;
+  display: grid;
+  row-gap: 4px;
+}
+
+.d3-claves > div {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  align-items: center;
+}
+
+.d3-claves dt {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-sm);
+}
+
+.d3-claves dd {
+  margin: 0;
+}
+
+/* ---------- 4. Supuestos ---------- */
+.d4 .contenido {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: 24px;
+}
+
+.d4-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--esp-lg);
+}
+
+.d4-supuesto {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-sm);
+}
+
+.d4-supuesto h2 {
+  margin: 0;
+}
+
+/* Los SVG llevan proporción explícita: en una rejilla, height: auto cae a 150 px por defecto. */
+.d4-esquema {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 820 / 226;
+}
+
+.d4-cierre {
+  display: grid;
+  row-gap: var(--esp-xs);
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+/* ---------- 5. Formulación ---------- */
+.d5-bloque {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-md);
+}
+
+.d5-fila {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  column-gap: var(--esp-lg);
+  align-items: center;
+}
+
+/* La pérdida es más ancha que la columna: rótulo encima, ecuación a todo el ancho. */
+.d5-fila.apilada {
+  grid-template-columns: 1fr;
+  row-gap: var(--esp-xs);
+}
+
+.d5-ecuacion {
+  line-height: 1.6;
+}
+
+/* f -> σ -> g con la gramática de bloques de la diapositiva 7. */
+.d5-bloques {
+  display: block;
+  width: 100%;
+  height: 216px;
+}
+
+.d5-nota {
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+.d5-alcance {
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+/* ---------- 6. Agregación ---------- */
+.d6-composicion {
+  display: grid;
+  grid-template-columns: 980px 1fr;
+  column-gap: var(--esp-lg);
+  height: 100%;
+}
+
+.d6-multiples {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: var(--esp-sm);
+  min-height: 0;
+}
+
+.d6-multiples svg {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.d6-resultados {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-sm);
+}
+
+.d6-tabla {
+  width: 100%;
+}
+
+.d6-resultados .encabezado-protocolo {
+  margin-bottom: 0;
+}
+
+/* ---------- 7. ABMIL ---------- */
+.d7-bloques {
+  width: 100%;
+  height: 220px;
+}
+
+.d7-ecuacion {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-md);
+}
+
+/* Paso 2: límites arriba; comparación reservada (original | anotación | atención) debajo. */
+/* Paso 2: dos limitaciones como bloques con su encabezado; sin paneles de imagen (D7). */
+.d7-limites {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-lg);
+  max-width: 1500px;
+}
+
+.d7-limite {
+  display: grid;
+  row-gap: var(--esp-xs);
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+/* ---------- 8. Pipeline ---------- */
+.d8-contenido {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  row-gap: var(--esp-xs);
+}
+
+.d8-pipeline {
+  width: 100%;
+  height: 656px;
+}
+
+/* ---------- 9. Evolución ---------- */
+.d9 .contenido {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-sm);
+}
+
+.d9-linea {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  border-bottom: var(--trazo) solid var(--tinta);
+}
+
+.d9-linea li {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  column-gap: var(--esp-lg);
+  padding: var(--esp-xs) 0;
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+.d9-linea li:first-child {
+  border-top: var(--trazo) solid var(--tinta);
+}
+
+.d9-modelo {
+  display: grid;
+  align-content: start;
+}
+
+.d9-flecha {
+  color: var(--tinta-secundaria);
+}
+
+/* ---------- 10. Resultados y limitaciones ---------- */
+.d10-panel {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-sm);
+}
+
+/* Tabla A: tres columnas y siete filas; el protocolo va en una columna lateral.
+ * Tabla B: cinco columnas; el protocolo va en una banda superior.
+ * La forma distinta sigue al contenido y, además, evita leer A y B como una sola tabla. */
+.d10-lateral {
+  grid-template-columns: 520px 1fr;
+  column-gap: var(--esp-lg);
+}
+
+.d10-lateral .encabezado-protocolo {
+  align-content: start;
+}
+
+.d10-regla {
+  margin-top: var(--esp-sm);
+  padding-top: var(--esp-xs);
+  border-top: var(--trazo-fino) solid var(--rejilla);
+}
+
+.d10-tabla-a,
+.d10-tabla-b,
+.d10-tabla-raff {
+  width: 100%;
+}
+
+/* La fila de referencia lleva su nombre completo del documento y ocupa dos líneas. */
+.d10-tabla-b td,
+.d10-tabla-b th {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.d10-tabla-b tr.separada td {
+  padding-top: 8px;
+}
+
+.d10-columna-tabla {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-sm);
+}
+
+/* 10.3: un panel por artículo, separados por un canal ancho; nunca en un mismo eje. */
+.d10-protocolos {
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--esp-lg);
+  align-items: start;
+}
+
+.d10-protocolos-titulo,
+.d10-aclaracion {
+  grid-column: 1 / -1;
+}
+
+.d10-protocolo {
+  display: grid;
+  row-gap: var(--esp-xs);
+  padding-top: var(--esp-sm);
+  border-top: var(--trazo) solid var(--tinta);
+}
+
+.d10-protocolo .encabezado-protocolo {
+  margin-bottom: 0;
+}
+
+.d10-tabla-c {
+  width: 100%;
+  margin-top: var(--esp-xs);
+}
+
+.d10-conclusion {
+  row-gap: var(--esp-md);
+}
+
+.d10-veneno svg {
+  width: 100%;
+  height: 344px;
+}
+
+.d10-reglas {
+  display: grid;
+  row-gap: 0;
+}
+
+.d10-tabla-raff {
+  width: 100%;
+}
+
+/* Solo la columna del modelo se parte: el rótulo completo del documento ocupa dos líneas. */
+.d10-tabla-raff th,
+.d10-tabla-raff td {
+  padding: 2px 12px 2px 0;
+}
+
+/* Canal entre la última cifra y el resultado. */
+.d10-tabla-raff th:last-child,
+.d10-tabla-raff td:last-child {
+  padding-left: 20px;
+}
+
+.d10-tabla-raff th:not(:first-child),
+.d10-tabla-raff td:not(:first-child),
+.sin-corte {
+  white-space: nowrap;
+}
+
+/* ---------- 11. Conclusiones ---------- */
+.d11 .contenido {
+  display: grid;
+  align-content: start;
+  row-gap: var(--esp-md);
+}
+
+.d11-ideas {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  row-gap: var(--esp-md);
+  max-width: 1600px;
+}
+
+.d11-ideas li::marker {
+  font-weight: 700;
+}
+
+.d11-pregunta {
+  font-weight: 700;
+  padding-top: var(--esp-md);
+  border-top: var(--trazo) solid var(--tinta);
+  max-width: 1600px;
+}

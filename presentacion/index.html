@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multiple Instance Learning</title>
+  <meta name="description" content="Exposición académica de 11 diapositivas sobre Multiple Instance Learning con CAMELYON16 como ejemplo conductor. Dirección visual provisional v0.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/diapositivas.css">
+</head>
+<body>
+
+<!-- Definiciones compartidas por los esquemas: tramas y puntas de flecha. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Trama de la señal engañosa («veneno» de Raff y Holt). Solo en esquemas sintéticos. -->
+    <pattern id="trama-veneno" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="16" height="16" fill="#F4F5F5"/>
+      <rect width="6" height="16" fill="#B3261E"/>
+    </pattern>
+    <!-- Trama del extractor congelado. -->
+    <pattern id="trama-congelado" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="18" height="18" fill="#F4F5F5"/>
+      <rect width="3" height="18" fill="#6B7178"/>
+    </pattern>
+    <marker id="flecha" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#16181B"/>
+    </marker>
+    <marker id="flecha-gradiente" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#4B5157"/>
+    </marker>
+
+    <!-- Esquema ilustrativo de una lámina: formas neutras que NO imitan una fotografía H&E. -->
+    <symbol id="esquema-lamina" viewBox="0 0 1000 500">
+      <path d="M120,260 C110,150 230,90 340,110 C450,130 470,230 440,320 C410,410 260,430 190,390 C140,360 125,310 120,260 Z" fill="#DADDDE" stroke="#6B7178" stroke-width="3"/>
+      <path d="M520,200 C540,120 660,90 760,120 C860,150 900,240 870,330 C840,410 720,440 630,410 C550,380 505,290 520,200 Z" fill="#DADDDE" stroke="#6B7178" stroke-width="3"/>
+      <path d="M880,92 C900,70 950,80 955,110 C960,140 930,160 905,150 C880,140 870,115 880,92 Z" fill="#DADDDE" stroke="#6B7178" stroke-width="3"/>
+      <!-- Contorno de anotación humana (esquema): halo claro + línea verde azulada. -->
+      <path d="M740,285 C748,270 772,268 782,280 C792,292 788,312 774,318 C760,324 742,316 738,302 C736,295 736,290 740,285 Z" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+      <path d="M740,285 C748,270 772,268 782,280 C792,292 788,312 774,318 C760,324 742,316 738,302 C736,295 736,290 740,285 Z" fill="none" stroke="#00796B" stroke-width="4"/>
+    </symbol>
+
+    <!-- Región de interés ampliada del mismo esquema (aumento ilustrativo). -->
+    <symbol id="esquema-region" viewBox="0 0 500 500">
+      <rect width="500" height="500" fill="#F4F5F5"/>
+      <path d="M-20,-20 L520,-20 L520,520 C380,500 200,520 90,470 C10,430 -20,300 -20,200 Z" fill="#DADDDE"/>
+      <path d="M520,520 C380,500 200,520 90,470 C10,430 -20,300 -20,200" fill="none" stroke="#6B7178" stroke-width="3"/>
+      <path d="M190,170 C222,110 318,102 358,150 C398,198 382,278 326,302 C270,326 198,294 182,238 C174,210 174,190 190,170 Z" fill="none" stroke="#FFFFFF" stroke-width="10"/>
+      <path d="M190,170 C222,110 318,102 358,150 C398,198 382,278 326,302 C270,326 198,294 182,238 C174,210 174,190 190,170 Z" fill="none" stroke="#00796B" stroke-width="5"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="escenario">
+  <div class="lienzo" id="lienzo">
+
+    <!-- ============================================================ 1 -->
+    <section class="diapositiva d1" data-titulo="¿Dónde está el problema?" aria-label="Diapositiva 1">
+      <h1 class="titulo">¿Dónde está el problema?</h1>
+      <div class="contenido">
+        <figure class="panel d1-a">
+          <div class="panel-figura">
+            <div class="esquema-panel">
+              <svg viewBox="90 60 880 390" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                <use href="#esquema-lamina" x="0" y="0" width="1000" height="500"/>
+                <rect id="d1-roi" x="700" y="236" width="128" height="118" fill="none" stroke="#16181B" stroke-width="5"/>
+                <text x="740" y="226" class="fuerte" font-size="58">b</text>
+              </svg>
+            </div>
+          </div>
+          <figcaption class="pie-figura"><span class="letra-panel">a</span>Lámina completa · <span class="dimension">≈ 40.000 × 40.000 px</span></figcaption>
+        </figure>
+        <svg class="d1-zoom" id="d1-zoom" aria-hidden="true"></svg>
+
+        <figure class="panel d1-b">
+          <div class="panel-figura">
+            <div class="esquema-panel">
+              <svg viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <use href="#esquema-region"/>
+              </svg>
+            </div>
+          </div>
+          <figcaption class="pie-figura"><span class="letra-panel">b</span>Foco tumoral</figcaption>
+        </figure>
+
+        <p class="n2 d1-dato"><span class="fuerte">&lt; 10 %</span> del tejido es tumor, en promedio, en una lámina positiva</p>
+        <p class="n3 leyenda-item d1-leyenda">
+          <svg class="muestra-marca" viewBox="0 0 56 56" aria-hidden="true"><path d="M8,40 C8,14 48,10 48,30 C48,48 16,52 8,40 Z" fill="none" stroke="#FFFFFF" stroke-width="8"/><path d="M8,40 C8,14 48,10 48,30 C48,48 16,52 8,40 Z" fill="none" stroke="#00796B" stroke-width="4"/></svg>
+          Anotación humana
+        </p>
+      </div>
+      <footer class="pie">
+        <p class="fuente">Fuente: Li et al. (2021), §1 y §4.1; Shao et al. (2021), §4.1. Esquema ilustrativo: no son datos y no está a escala.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="diapositiva d2" data-titulo="¿Qué es Multiple Instance Learning?" aria-label="Diapositiva 2">
+      <h1 class="titulo">¿Qué es Multiple Instance Learning?</h1>
+      <div class="contenido capas">
+
+        <div class="d2-comparacion" data-solo="1">
+        <table class="tabla d2-tabla">
+          <thead>
+            <tr>
+              <th scope="col">Aspecto</th>
+              <th scope="col">Supervisado tradicional</th>
+              <th scope="col">MIL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Entrada</th><td>Una instancia <i>x</i></td><td>Un conjunto <i>X</i> = {<i>x</i><sub>1</sub>, …, <i>x</i><sub>K</sub>}, con <i>K</i> variable</td></tr>
+            <tr><th scope="row">Etiqueta observada</th><td><i>y</i> de cada instancia</td><td><i>Y</i> del conjunto; <i>y</i><sub>k</sub> ocultas</td></tr>
+            <tr><th scope="row">Orden</th><td>No aplica</td><td>Irrelevante: invariante a permutaciones</td></tr>
+            <tr><th scope="row">Tareas</th><td>Clasificar instancias</td><td>Clasificar bags y, de forma secundaria, localizar instancias clave</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="d2-origen oculto" data-solo="2">
+          <div class="d2-origen-texto">
+            <p class="n2 fuerte">1997: actividad de fármacos</p>
+            <p class="n3">Solo se sabe si la molécula es activa, no qué conformación lo es.</p>
+            <p class="n3">Ignorar la estructura de bolsa funciona muy mal; identificar las instancias responsables: <span class="fuerte">89 %</span> de aciertos (olor a almizcle).</p>
+            <p class="n3 d2-distincion"><span class="fuerte">MIL no es sinónimo de supervisión débil:</span> lo distingue la estructura de conjunto.</p>
+          </div>
+        </div>
+
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Fuente: Ilse et al. (2018), resumen y §2.1.</p>
+        <p class="fuente oculto" data-solo="2">Fuente: Dietterich, Lathrop y Lozano-Pérez (1997), resumen; Foulds y Frank (2010), §2.3.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="diapositiva d3" data-titulo="Bag e Instance" aria-label="Diapositiva 3">
+      <h1 class="titulo">Bag e Instance</h1>
+      <div class="contenido">
+        <div class="d3-cadena">
+          <figure class="panel d3-a">
+            <div class="panel-figura">
+              <div class="esquema-panel">
+                <svg viewBox="0 0 1000 470" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <use href="#esquema-lamina" x="0" y="-30" width="1000" height="500"/>
+                  <g id="d3-lamina-cuadricula" data-paso="2"></g>
+                  <rect x="700" y="206" width="128" height="118" fill="none" stroke="#16181B" stroke-width="10"/>
+                </svg>
+              </div>
+            </div>
+            <figcaption class="pie-figura"><span class="letra-panel">a</span>Muestra</figcaption>
+          </figure>
+
+          <svg class="d3-conector" viewBox="0 0 56 56" aria-hidden="true"><path d="M2,28 H46" stroke="#16181B" stroke-width="4" marker-end="url(#flecha)"/></svg>
+
+          <figure class="panel d3-b">
+            <div class="panel-figura">
+              <div class="esquema-panel">
+                <svg viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><use href="#esquema-region"/></svg>
+              </div>
+            </div>
+            <figcaption class="pie-figura"><span class="letra-panel">b</span>Región</figcaption>
+          </figure>
+
+          <svg class="d3-conector" viewBox="0 0 56 56" aria-hidden="true" data-paso="2"><path d="M2,28 H46" stroke="#16181B" stroke-width="4" marker-end="url(#flecha)"/></svg>
+
+          <figure class="panel d3-c" data-paso="2">
+            <div class="panel-figura">
+              <div class="esquema-panel">
+                <svg viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" id="d3-cuadricula" aria-hidden="true">
+                  <use href="#esquema-region"/>
+                </svg>
+              </div>
+            </div>
+            <figcaption class="pie-figura"><span class="letra-panel">c</span>Cuadrícula</figcaption>
+          </figure>
+
+          <svg class="d3-conector" viewBox="0 0 56 56" aria-hidden="true" data-paso="2"><path d="M2,28 H46" stroke="#16181B" stroke-width="4" marker-end="url(#flecha)"/></svg>
+
+          <figure class="panel d3-d" data-paso="2">
+            <div class="panel-figura d3-parches">
+              <svg class="d3-parche" data-celda="5,4" data-testigo aria-hidden="true"></svg>
+              <svg class="d3-parche" data-celda="8,1" aria-hidden="true"></svg>
+              <svg class="d3-parche" data-celda="2,7" aria-hidden="true"></svg>
+            </div>
+            <figcaption class="pie-figura"><span class="letra-panel">d</span>Parches ampliados</figcaption>
+          </figure>
+        </div>
+
+        <dl class="d3-claves n3">
+          <div><dt>Bag</dt><dd>la lámina; su etiqueta <i>Y</i> se observa</dd></div>
+          <div data-paso="2"><dt>Instancia</dt><dd>un parche; su etiqueta <i>y</i><sub>k</sub> existe, pero no se observa</dd></div>
+          <div data-paso="2"><dt><svg class="muestra-marca" viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="6" width="44" height="44" fill="none" stroke="#00796B" stroke-width="5" stroke-dasharray="10 6"/><path d="M6,6 h15 L6,21 Z" fill="#00796B" stroke="#00796B" stroke-width="5"/></svg>Testigo</dt><dd>parche tumoral que justifica <i>Y</i> = 1; no se observa al&nbsp;entrenar</dd></div>
+          <div data-paso="2"><dt>Tamaño</dt><dd><span class="dimension">224</span> o <span class="dimension">256 px</span> a 20× · ≈ 8.000 a 8.800 parches</dd></div>
+        </dl>
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Esquema ilustrativo: no son datos.</p>
+        <p class="fuente oculto" data-solo="2">Fuente: Li et al. (2021), §4.1 (224 px, ≈ 8.000 parches); Shao et al. (2021), §4 (256 px, ≈ 8.800). Esquema ilustrativo: no son datos.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 4 -->
+    <section class="diapositiva d4" data-titulo="Supuestos de MIL" aria-label="Diapositiva 4">
+      <h1 class="titulo">Supuestos de MIL</h1>
+      <div class="contenido">
+        <div class="d4-columnas">
+          <div class="d4-supuesto">
+            <h2 class="n2 fuerte">Estándar</h2>
+            <svg viewBox="0 0 820 226" id="d4-estandar" class="d4-esquema" aria-label="Bag de seis instancias con etiquetas 0, 0, 1, 0, 0, 0; el OR lógico da Y = 1"></svg>
+            <p class="n3">Al menos una instancia positiva. <span class="fuerte">Asimétrico.</span></p>
+          </div>
+          <div class="d4-supuesto">
+            <h2 class="n2 fuerte">Colectivo <span class="secundario">(Xu, 2003)</span></h2>
+            <svg viewBox="0 0 820 226" id="d4-colectivo" class="d4-esquema" aria-label="El mismo bag con probabilidades de instancia ilustrativas; su promedio da la probabilidad del bag"></svg>
+            <p class="n3 d4-formula"><math><mi>P</mi><mo>(</mo><mi>c</mi><mo>|</mo><mi>b</mi><mo>)</mo><mo>=</mo><mn>1</mn><mo>/</mo><msub><mi>n</mi><mi>b</mi></msub><mspace width="0.15em"/><msubsup><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>b</mi></msub></msubsup><mi>P</mi><mo>(</mo><mi>c</mi><mo>|</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo></math></p>
+          </div>
+        </div>
+        <div class="d4-cierre">
+          <p class="n3"><span class="fuerte">Umbral:</span> al menos <i>t</i><sub>i</sub> instancias de cada concepto requerido.</p>
+          <p class="n3 fuerte">El supuesto es una propiedad del problema; la agregación, una decisión del modelo.</p>
+        </div>
+      </div>
+      <footer class="pie">
+        <p class="fuente">Fuente: Foulds y Frank (2010), §2.4 (ec. 1), §3.1 y §3.7; Weidmann et al. (2003). <i>b</i>: el bag; <i>n</i><sub>b</sub>: su número de instancias. Esquemas ilustrativos: no son datos.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 5 -->
+    <section class="diapositiva d5" data-titulo="Formulación matemática" aria-label="Diapositiva 5">
+      <h1 class="titulo">Formulación matemática</h1>
+      <div class="contenido capas">
+        <div class="d5-bloque" data-solo="1">
+          <div class="d5-fila">
+            <p class="n3 secundario">Supuesto estándar</p>
+            <div class="n2 d5-ecuacion">
+              <math displaystyle="true"><mi>Y</mi><mo>=</mo><munder><mo movablelimits="false">max</mo><mi>k</mi></munder><mo>{</mo><msub><mi>y</mi><mi>k</mi></msub><mo>}</mo></math>
+            </div>
+          </div>
+          <div class="d5-fila">
+            <p class="n3 secundario">Bernoulli</p>
+            <div class="n2 d5-ecuacion">
+              <math displaystyle="true"><mi>θ</mi><mo>(</mo><mi>X</mi><mo>)</mo><mo>=</mo><mi>P</mi><mo>(</mo><mi>Y</mi><mo>=</mo><mn>1</mn><mo>|</mo><mi>X</mi><mo>)</mo></math>
+            </div>
+          </div>
+          <div class="d5-fila apilada">
+            <p class="n3 secundario">Pérdida (entropía cruzada binaria)</p>
+            <div class="n2 d5-ecuacion">
+              <math displaystyle="true"><mi>ℒ</mi><mo>(</mo><mi>X</mi><mo>,</mo><mi>Y</mi><mo>)</mo><mo>=</mo><mo>−</mo><mo>[</mo><mi>Y</mi><mspace width="0.2em"/><mi>log</mi><mspace width="0.15em"/><mi>θ</mi><mo>(</mo><mi>X</mi><mo>)</mo><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>Y</mi><mo>)</mo><mspace width="0.2em"/><mi>log</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>θ</mi><mo>(</mo><mi>X</mi><mo>)</mo><mo>)</mo><mo>]</mo></math>
+            </div>
+          </div>
+          <p class="n3 d5-nota">El máximo de etiquetas discretas no es diferenciable; se entrena con la log-verosimilitud.</p>
+        </div>
+
+        <div class="d5-bloque oculto" data-solo="2">
+          <div class="d5-fila">
+            <p class="n3 secundario">Invariante a permutaciones</p>
+            <div class="n2 d5-ecuacion">
+              <math displaystyle="true"><mi>S</mi><mo stretchy="false">(</mo><mi>X</mi><mo stretchy="false">)</mo><mo>=</mo><mi>g</mi><mrow><mo stretchy="false">(</mo><munder><mo>∑</mo><mrow><mi>x</mi><mo>∈</mo><mi>X</mi></mrow></munder><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+            </div>
+          </div>
+          <svg viewBox="0 0 1728 216" id="d5-bloques" class="d5-bloques" aria-label="Tres bloques: f transforma cada instancia (encoder); σ agrega de forma simétrica, con Σ u otro operador simétrico (MIL pooling); g da la probabilidad del bag"></svg>
+          <p class="n3 d5-alcance"><span class="fuerte">Alcance:</span> plantilla general bajo condiciones precisas; DSMIL y TransMIL no la siguen literalmente.</p>
+        </div>
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Fuente: Ilse et al. (2018), §2.1, ec. 1–2.</p>
+        <p class="fuente oculto" data-solo="2">Fuente: Ilse et al. (2018), Teorema 1, ec. 3 (citando a Zaheer et al., 2017); Wagstaff et al. (2019) sobre el caso continuo.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 6 -->
+    <section class="diapositiva d6" data-titulo="Métodos de agregación" aria-label="Diapositiva 6">
+      <h1 class="titulo">Métodos de agregación</h1>
+      <div class="contenido">
+        <div class="d6-composicion">
+          <div class="d6-multiples">
+            <svg viewBox="0 0 980 490" id="d6-pesos" aria-label="El mismo bag de 12 instancias tres veces: max da todo el peso a una instancia, mean reparte por igual y la atención concentra el peso en los testigos"></svg>
+            <p class="n3 d6-leyenda">En cada fila, los pesos suman 1. Max: sobre puntuaciones de instancia. La atención no es probabilidad de tumor.</p>
+          </div>
+          <div class="d6-resultados">
+            <div class="encabezado-protocolo">
+              <p class="n2 fuerte">Protocolo A · AUC</p>
+              <p class="n3">ResNet50 de ImageNet</p>
+              <p class="n4 secundario">Shao et al. (2021), Tabla 1</p>
+            </div>
+            <table class="tabla d6-tabla">
+              <thead><tr><th scope="col">Operador</th><th scope="col" class="num">AUC</th></tr></thead>
+              <tbody>
+                <tr><td>Max</td><td class="num">0,8569</td></tr>
+                <tr><td>Mean</td><td class="num">0,4647</td></tr>
+                <tr><td>Atención (ABMIL)</td><td class="num">0,8760</td></tr>
+              </tbody>
+            </table>
+            <p class="n3 d6-nota">Protocolo B (SimCLR): mean, <span class="cifra">0,7620</span>. No se compara con A.</p>
+          </div>
+        </div>
+      </div>
+      <footer class="pie">
+        <p class="fuente">Fuente: Ilse et al. (2018), ec. 5–8; Shao et al. (2021), Tabla 1; Li et al. (2021), Tabla 1. Comparar solo filas de una misma tabla. Bag de 12 instancias: esquema ilustrativo, no son datos.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 7 -->
+    <section class="diapositiva d7" data-titulo="Attention-based Deep MIL (ABMIL)" aria-label="Diapositiva 7">
+      <h1 class="titulo">Attention-based Deep MIL (ABMIL)</h1>
+      <div class="contenido capas">
+        <div class="d7-ecuacion" data-solo="1">
+            <svg viewBox="0 0 1728 220" class="d7-bloques" id="d7-bloques" aria-label="Cuatro bloques: encoder f, atención con compuerta, agregación y clasificador g"></svg>
+            <div class="n2">
+              <math displaystyle="true"><msub><mi>a</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><mi>exp</mi><mo>{</mo><msup><mi mathvariant="bold">w</mi><mo>⊤</mo></msup><mo>(</mo><mi>tanh</mi><mo>(</mo><mi mathvariant="bold">V</mi><msubsup><mi mathvariant="bold">h</mi><mi>k</mi><mo>⊤</mo></msubsup><mo>)</mo><mo>⊙</mo><mi>sigm</mi><mo>(</mo><mi mathvariant="bold">U</mi><msubsup><mi mathvariant="bold">h</mi><mi>k</mi><mo>⊤</mo></msubsup><mo>)</mo><mo>)</mo><mo>}</mo></mrow><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><mi>exp</mi><mo>{</mo><msup><mi mathvariant="bold">w</mi><mo>⊤</mo></msup><mo>(</mo><mi>tanh</mi><mo>(</mo><mi mathvariant="bold">V</mi><msubsup><mi mathvariant="bold">h</mi><mi>j</mi><mo>⊤</mo></msubsup><mo>)</mo><mo>⊙</mo><mi>sigm</mi><mo>(</mo><mi mathvariant="bold">U</mi><msubsup><mi mathvariant="bold">h</mi><mi>j</mi><mo>⊤</mo></msubsup><mo>)</mo><mo>)</mo><mo>}</mo></mrow></mfrac></math>
+            </div>
+            <p class="n3">La compuerta sigmoide se añade porque tanh es casi lineal en [−1, 1]. Los pesos suman 1 dentro del bag.</p>
+        </div>
+
+        <div class="d7-limites oculto" data-solo="2">
+            <div class="d7-limite">
+              <p class="n2 fuerte">Los pesos son un proxy</p>
+              <p class="n3">Importancia relativa dentro del bag, no probabilidad de tumor ni explicación causal.</p>
+            </div>
+            <div class="d7-limite">
+              <p class="n2 fuerte">Independencia supuesta</p>
+              <p class="n3">En una lámina, los parches vecinos están correlacionados.</p>
+            </div>
+        </div>
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Atención con compuerta: Ilse, Tomczak y Welling (2018), §2.4, ec. 9; Tabla 15.</p>
+        <p class="fuente oculto" data-solo="2">Fuente: Ilse et al. (2018), §2.1 y §2.4 («Interpretability»); Lu et al. (2021), Discusión.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 8 -->
+    <section class="diapositiva d8" data-titulo="Pipeline completo de MIL" aria-label="Diapositiva 8">
+      <h1 class="titulo">Pipeline completo de MIL</h1>
+      <div class="contenido d8-contenido">
+        <p class="n3 secundario">Referencia: configuración publicada de CLAM y TransMIL</p>
+        <svg viewBox="0 0 1728 656" id="d8-pipeline" class="d8-pipeline" aria-label="Pipeline de referencia de CLAM y TransMIL en ocho etapas: segmentación, teselado, extracción congelada, encoder 1024 a 512, agregación (max, mean o ABMIL, donde la atención calcula los pesos), clasificador y salida. El mapa de calor es opcional y requiere pesos de atención. En entrenamiento, los gradientes regresan desde la pérdida al clasificador, a la atención y al encoder."></svg>
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Ocho etapas de la configuración de referencia; la 5 (atención) solo existe en ABMIL. Otras estrategias de extractor: extremo a extremo (ABMIL) o autosupervisado (DSMIL).</p>
+        <p class="fuente oculto" data-solo="2">Entrenamiento: los gradientes actualizan encoder, atención (si existe) y clasificador; el extractor congelado no los recibe. Normalmente un bag por paso.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 9 -->
+    <section class="diapositiva d9" data-titulo="Evolución de las arquitecturas" aria-label="Diapositiva 9">
+      <h1 class="titulo">Evolución de las arquitecturas</h1>
+      <div class="contenido">
+        <p class="n3 fuerte d9-tesis">Cada arquitectura responde a una limitación de la anterior</p>
+        <ol class="d9-linea">
+          <li>
+            <p class="d9-modelo"><span class="n2 fuerte">ABMIL</span><span class="n4 secundario">2018 · ICML</span></p>
+            <p class="n3"><span class="secundario">Max y mean fijos</span> <span class="d9-flecha">→</span> pooling con atención, entrenable</p>
+          </li>
+          <li>
+            <p class="d9-modelo"><span class="n2 fuerte">CLAM</span><span class="n4 secundario">2021 · Nat. Biomed. Eng.</span></p>
+            <p class="n3"><span class="secundario">Pocos datos etiquetados</span> <span class="d9-flecha">→</span> pseudo-etiquetas con los parches más y menos atendidos</p>
+          </li>
+          <li>
+            <p class="d9-modelo"><span class="n2 fuerte">DSMIL</span><span class="n4 secundario">2021 · CVPR</span></p>
+            <p class="n3"><span class="secundario">Bags grandes; extractor subóptimo</span> <span class="d9-flecha">→</span> máximo + atención a la instancia crítica; SimCLR</p>
+          </li>
+          <li>
+            <p class="d9-modelo"><span class="n2 fuerte">TransMIL</span><span class="n4 secundario">2021 · NeurIPS</span></p>
+            <p class="n3"><span class="secundario">Independencia entre instancias</span> <span class="d9-flecha">→</span> autoatención y codificación posicional</p>
+          </li>
+        </ol>
+      </div>
+      <footer class="pie">
+        <p class="fuente">Fuentes: Ilse et al. (2018); Lu et al. (2021); Li et al. (2021); Shao et al. (2021). Sin cifras: cada artículo usa otro protocolo (diapositiva 10).</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 10 -->
+    <section class="diapositiva d10" data-titulo="Aplicaciones, resultados y limitaciones" aria-label="Diapositiva 10">
+      <h1 class="titulo">Aplicaciones, resultados y limitaciones</h1>
+      <div class="contenido capas">
+
+        <div class="d10-panel d10-lateral" data-solo="1">
+          <div class="encabezado-protocolo">
+            <p class="n2 fuerte">Tabla A</p>
+            <p class="n3">Shao et al. (2021), NeurIPS, Tabla 1</p>
+            <p class="n3 secundario">ResNet50 de ImageNet</p>
+            <p class="n3 secundario"><span class="cifra">256</span> px a <span class="cifra">20×</span></p>
+            <p class="n3 secundario"><span class="cifra">270</span> láminas, <span class="cifra">90/10</span></p>
+            <p class="n3 secundario">Prueba oficial</p>
+            <p class="n3 d10-regla">Comparar solo filas de esta tabla.</p>
+          </div>
+          <div class="d10-columna-tabla">
+          <table class="tabla d10-tabla-a">
+            <thead><tr><th scope="col">Modelo</th><th scope="col" class="num">Exactitud</th><th scope="col" class="num">AUC</th></tr></thead>
+            <tbody>
+              <tr class="resaltada"><td>Mean pooling</td><td class="num">0,6389</td><td class="num">0,4647</td></tr>
+              <tr class="atenuada"><td>Max pooling</td><td class="num">0,8062</td><td class="num">0,8569</td></tr>
+              <tr class="resaltada"><td>ABMIL</td><td class="num">0,8682</td><td class="num">0,8760</td></tr>
+              <tr class="atenuada"><td>DSMIL</td><td class="num">0,7985</td><td class="num">0,8179</td></tr>
+              <tr class="atenuada"><td>CLAM-SB</td><td class="num">0,8760</td><td class="num">0,8809</td></tr>
+              <tr class="atenuada"><td>CLAM-MB</td><td class="num">0,8372</td><td class="num">0,8679</td></tr>
+              <tr class="atenuada"><td>TransMIL</td><td class="num">0,8837</td><td class="num">0,9309</td></tr>
+            </tbody>
+          </table>
+          <p class="n3 fuerte d10-lectura">Dentro de A, ABMIL supera a mean.</p>
+          </div>
+        </div>
+
+        <div class="d10-panel oculto" data-solo="2">
+          <div class="encabezado-protocolo">
+            <p class="n2 fuerte">Tabla B · Li et al. (2021), CVPR, Tabla 1</p>
+            <p class="n3 secundario">ResNet18 con SimCLR · <span class="cifra">224</span> px a <span class="cifra">20×</span> · <span class="cifra">271 / 129</span> láminas</p>
+          </div>
+          <table class="tabla d10-tabla-b">
+            <thead><tr><th scope="col">Modelo</th><th scope="col">Escala</th><th scope="col" class="num">Exactitud</th><th scope="col" class="num">AUC</th><th scope="col" class="num">FROC</th></tr></thead>
+            <tbody>
+              <tr class="resaltada"><td>Mean pooling</td><td>Una</td><td class="num">0,7984</td><td class="num">0,7620</td><td class="num">0,1162</td></tr>
+              <tr class="atenuada"><td>Max pooling</td><td>Una</td><td class="num">0,8295</td><td class="num">0,8641</td><td class="num">0,3313</td></tr>
+              <tr class="resaltada"><td>ABMIL</td><td>Una</td><td class="num">0,8450</td><td class="num">0,8653</td><td class="num">0,4056</td></tr>
+              <tr class="atenuada"><td>DSMIL</td><td>Una</td><td class="num">0,8682</td><td class="num">0,8944</td><td class="num">0,4296</td></tr>
+              <tr class="atenuada"><td>DSMIL-LC</td><td>Múltiple</td><td class="num">0,8992</td><td class="num">0,9165</td><td class="num">0,4371</td></tr>
+              <tr class="separada atenuada"><td>Totalmente supervisado <span class="secundario" style="white-space: nowrap">(cota superior)</span></td><td>Una</td><td class="num">0,9147</td><td class="num">0,9362</td><td class="num">0,5254</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d10-panel d10-protocolos oculto" data-solo="3">
+          <p class="n2 fuerte d10-protocolos-titulo">La magnitud depende del protocolo</p>
+          <div class="d10-protocolo">
+            <div class="encabezado-protocolo">
+              <p class="n3 fuerte">Shao et al. (2021), Tabla 1</p>
+              <p class="n3 secundario">ResNet50 de ImageNet</p>
+              <p class="n3 secundario"><span class="cifra">130</span> láminas de prueba, según el artículo</p>
+            </div>
+            <table class="tabla d10-tabla-c">
+              <thead><tr><th scope="col">Modelo</th><th scope="col" class="num">AUC</th></tr></thead>
+              <tbody>
+                <tr><td>DSMIL</td><td class="num">0,8179</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d10-protocolo">
+            <div class="encabezado-protocolo">
+              <p class="n3 fuerte">Li et al. (2021), Tablas 1 y 3</p>
+              <p class="n3 secundario">ResNet18 · <span class="cifra">129</span> láminas de prueba</p>
+            </div>
+            <table class="tabla d10-tabla-c">
+              <thead><tr><th scope="col">DSMIL · características</th><th scope="col" class="num">AUC</th></tr></thead>
+              <tbody>
+                <tr><td>SimCLR (Tabla 1)</td><td class="num">0,8944</td></tr>
+                <tr><td>ImageNet (Tabla 3)</td><td class="num">0,5408</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="n3 d10-aclaracion"><span class="fuerte">No es una comparación directa:</span> cambia el protocolo.</p>
+        </div>
+
+        <div class="d10-panel d10-veneno oculto" data-solo="4">
+          <p class="n2 fuerte">Raff y Holt (2023): prueba algorítmica</p>
+          <svg viewBox="0 0 1728 344" id="d10-esquema-veneno" aria-label="En entrenamiento el veneno aparece solo en bags negativos; en prueba, solo en bags positivos"></svg>
+          <div class="d10-reglas">
+            <p class="n3"><span class="fuerte">Regla MIL:</span> hay una instancia del concepto positivo.</p>
+            <p class="n3"><span class="fuerte">Regla prohibida:</span> no hay veneno, luego es positivo.</p>
+            <p class="n3"><span class="fuerte">Falla:</span> AUC de entrenamiento &gt; 0,5 y de prueba &lt; 0,5.</p>
+            <p class="n3"><span class="fuerte">CLAM y DSMIL no fueron evaluados</span> en este estudio.</p>
+          </div>
+        </div>
+
+        <div class="d10-panel oculto" data-solo="5">
+          <p class="n2 fuerte">Prueba estándar · Raff y Holt (2023), Tabla 2</p>
+          <table class="tabla d10-tabla-raff">
+            <thead><tr><th scope="col">Modelo</th><th scope="col">Declara</th><th scope="col" class="num">AUC entr.</th><th scope="col" class="num">AUC prueba</th><th scope="col">Resultado</th></tr></thead>
+            <tbody>
+              <tr><td>mi-Net</td><td>Estándar</td><td class="num">0,998</td><td class="num">1,000</td><td>Pasa</td></tr>
+              <tr><td>MI-Net</td><td>Estándar</td><td class="num">1,000</td><td class="num">0,000</td><td class="fuerte">Falla</td></tr>
+              <tr><td>MIL-Pooling (Ilse et al., <span class="sin-corte">base de Attention MIL)</span></td><td>Estándar</td><td class="num">1,000</td><td class="num">0,000</td><td class="fuerte">Falla</td></tr>
+              <tr><td>TransMIL</td><td>Umbral</td><td class="num">1,000</td><td class="num">0,000</td><td class="fuerte">Falla</td></tr>
+              <tr><td>GNN-MIL</td><td>Umbral</td><td class="num">1,000</td><td class="num">0,000</td><td class="fuerte">Falla</td></tr>
+              <tr><td>CausalMIL</td><td>Estándar</td><td class="num">0,999</td><td class="num">1,000</td><td>Pasa</td></tr>
+              <tr><td>Hopfield MIL</td><td>Umbral</td><td class="num">0,495</td><td class="num">0,488</td><td>No aprendió</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <footer class="pie">
+        <p class="fuente" data-solo="1">Otras aplicaciones: subtipificación renal y pulmonar con TCGA (CLAM, TransMIL); próstata, piel y ganglios (Campanella et al., 2019).</p>
+        <p class="fuente oculto" data-solo="2">Fuente: Li et al. (2021), Tabla 1. FROC mide la localización. La cota totalmente supervisada usa anotaciones de parche.</p>
+        <p class="fuente oculto" data-solo="3">Fuente: Li et al. (2021), Tablas 1 y 3; Shao et al. (2021), Tabla 1; Ehteshami Bejnordi et al. (2017).</p>
+        <p class="fuente oculto" data-solo="4">Raff y Holt (2023), §3.1, Algoritmo 1. Esquema ilustrativo: no son datos.</p>
+        <p class="fuente oculto" data-solo="5">Raff y Holt (2023), Tabla 2 y §4.1. AUC <span class="cifra">0,000</span>: ordenamiento invertido. Las pruebas invalidan, no certifican: SIL, que no es MIL, también pasa.</p>
+      </footer>
+    </section>
+
+    <!-- ============================================================ 11 -->
+    <section class="diapositiva d11" data-titulo="Conclusiones" aria-label="Diapositiva 11">
+      <h1 class="titulo">Conclusiones</h1>
+      <div class="contenido">
+        <ol class="d11-ideas n2">
+          <li>MIL permite aprender de etiquetas de conjunto, como el diagnóstico de una lámina.</li>
+          <li>La atención hace la agregación entrenable y ofrece pistas visuales, pero no explicaciones.</li>
+          <li>Evaluar un modelo MIL exige declarar su supuesto y comprobarlo, no solo reportar el AUC.</li>
+        </ol>
+        <p class="d11-pregunta n2">¿Cómo combinar la flexibilidad de la atención con garantías de respetar el supuesto MIL?</p>
+      </div>
+      <footer class="pie">
+        <p class="fuente">Raff y Holt (2023) señalan a CausalMIL y mi-Net como punto de partida.</p>
+      </footer>
+    </section>
+
+    <nav class="controles" aria-label="Navegación de diapositivas">
+      <button type="button" id="anterior" aria-label="Anterior">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M18,4 L8,14 L18,24" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+      </button>
+      <p class="posicion" id="posicion" aria-live="polite">1 / 11</p>
+      <button type="button" id="siguiente" aria-label="Siguiente">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M10,4 L20,14 L10,24" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+      </button>
+    </nav>
+
+  </div>
+</main>
+
+<script src="js/figuras.js"></script>
+<script src="js/presentacion.js"></script>
+</body>
+</html>

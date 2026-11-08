@@ -1,0 +1,5 @@
+# Configuración local de Claude Code (hooks y permisos de cada equipo): no se versiona.
+.claude/settings.local.json
+
+# Configuración local de Impeccable (por desarrollador).
+.impeccable/config.local.json
